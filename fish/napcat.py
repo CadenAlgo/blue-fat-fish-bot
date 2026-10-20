@@ -139,6 +139,26 @@ def start() -> str:
     return "NapCat 启动中" + (f"（快速登录 {uin}）" if uin else "（需要扫码）")
 
 
+def _kill_all() -> int:
+    """按命令行匹配，杀掉所有 NapCat 的 node 进程（包括不是本次启动的）。"""
+    script = (
+        "Get-CimInstance Win32_Process -Filter \"Name='node.exe'\" | "
+        "Where-Object { $_.CommandLine -like '*napcat*' } | "
+        "ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; "
+        "$_.ProcessId }"
+    )
+    try:
+        result = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", script],
+            capture_output=True,
+            text=True,
+            timeout=40,
+        )
+    except Exception:
+        return 0
+    return len([line for line in (result.stdout or "").splitlines() if line.strip().isdigit()])
+
+
 def stop() -> str:
     global _process
     if _process is not None and _process.poll() is None:
@@ -148,14 +168,19 @@ def stop() -> str:
             check=False,
         )
         _process = None
-        return "NapCat 已停止"
-    return "我没有在管的 NapCat 进程"
+
+    killed = _kill_all()
+    time.sleep(1.5)
+    return f"NapCat 已停止（清掉 {killed} 个进程）" if killed else "NapCat 已经停了"
 
 
 def restart() -> str:
     ensure_client(int(settings.load()["server"]["onebot_port"]))
     stop()
-    time.sleep(2)
+    killed = _kill_all()
+    if killed:
+        print(f"[NapCat] 又清掉 {killed} 个残留进程")
+    time.sleep(2.5)
     return start()
 
 
