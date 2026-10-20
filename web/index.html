@@ -3,246 +3,382 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>大肥鱼控制台</title>
+<title>蓝色大肥鱼</title>
 <style>
   :root {
-    --bg: #0d1117;
-    --card: #161b22;
-    --line: #232b36;
-    --text: #e6edf3;
-    --muted: #8b98a9;
-    --accent: #4f9cf9;
-    --ok: #3fb950;
-    --bad: #f85149;
+    --bg: #0a1018;
+    --bg2: #0e1622;
+    --panel: #121c2b;
+    --panel2: #162234;
+    --line: rgba(140, 180, 230, .14);
+    --text: #e8f0fa;
+    --muted: #7f93ab;
+    --accent: #6fc3ff;
+    --accent2: #ffd166;
+    --ok: #5fd39a;
+    --bad: #ff7b72;
+    --radius: 16px;
   }
   * { box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
     margin: 0;
-    background: var(--bg);
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(111, 195, 255, .12), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(255, 209, 102, .07), transparent 55%),
+      linear-gradient(160deg, var(--bg), var(--bg2) 60%, #0a121d);
     color: var(--text);
-    font: 14px/1.6 "Microsoft YaHei", system-ui, sans-serif;
-    padding: 24px;
+    font: 14px/1.65 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
   }
-  header {
-    display: flex; align-items: center; gap: 12px;
-    flex-wrap: wrap; margin-bottom: 20px;
+  .app { display: flex; min-height: 100vh; }
+
+  /* 侧栏 */
+  .side {
+    width: 232px; flex: 0 0 232px; padding: 26px 18px;
+    border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 26px;
+    position: sticky; top: 0; height: 100vh;
   }
-  h1 { font-size: 20px; margin: 0 12px 0 0; }
-  h1 span { color: var(--accent); }
-  .pill {
-    font-size: 12px; padding: 4px 10px; border-radius: 999px;
-    background: #1b222c; border: 1px solid var(--line); color: var(--muted);
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .fish {
+    width: 44px; height: 44px; border-radius: 14px;
+    display: grid; place-items: center; font-size: 22px;
+    background: linear-gradient(150deg, #1b3550, #0f2237);
+    border: 1px solid rgba(111, 195, 255, .28);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
   }
-  .pill.ok { color: var(--ok); border-color: #1f3b24; background: #10231a; }
-  .pill.bad { color: var(--bad); border-color: #3d1d1d; background: #241314; }
-  .grid {
-    display: grid; gap: 16px;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  .brand b { display: block; font-size: 15px; letter-spacing: .02em; }
+  .brand small { color: var(--muted); font-size: 11px; }
+
+  nav { display: flex; flex-direction: column; gap: 4px; }
+  .nav {
+    appearance: none; border: 0; background: transparent; color: var(--muted);
+    text-align: left; padding: 10px 12px; border-radius: 10px;
+    font: inherit; cursor: pointer; transition: .18s;
   }
+  .nav:hover { color: var(--text); background: rgba(255, 255, 255, .03); }
+  .nav.active {
+    color: var(--text); background: linear-gradient(90deg, rgba(111, 195, 255, .16), rgba(111, 195, 255, .04));
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+  .side-foot { margin-top: auto; font-size: 11px; color: var(--muted); line-height: 1.9; }
+
+  /* 主区 */
+  .main { flex: 1; padding: 26px 34px 60px; max-width: 1120px; }
+  .top { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+  .chip {
+    font-size: 12px; padding: 5px 11px; border-radius: 999px;
+    border: 1px solid var(--line); color: var(--muted); background: rgba(255, 255, 255, .02);
+  }
+  .chip.on { color: var(--ok); border-color: rgba(95, 211, 154, .35); background: rgba(95, 211, 154, .08); }
+  .chip.off { color: var(--bad); border-color: rgba(255, 123, 114, .3); background: rgba(255, 123, 114, .07); }
+
+  .tab { display: none; animation: fade .25s ease; }
+  .tab.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  h1 { font-size: 20px; margin: 0 0 6px; font-weight: 600; }
+  h2 { font-size: 13px; margin: 0 0 14px; color: var(--muted); font-weight: 600; letter-spacing: .08em; }
+  .lead { color: var(--muted); margin: 0 0 22px; font-size: 13px; }
+
   .card {
-    background: var(--card); border: 1px solid var(--line);
-    border-radius: 12px; padding: 18px;
+    background: linear-gradient(180deg, var(--panel), var(--panel2));
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 20px; margin-bottom: 16px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .18);
   }
-  .card.wide { grid-column: 1 / -1; }
-  .card h2 {
-    font-size: 14px; margin: 0 0 14px; color: var(--muted);
-    font-weight: 600; letter-spacing: .04em;
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+  label { display: block; font-size: 12px; color: var(--muted); margin: 14px 0 6px; }
+  label:first-child { margin-top: 0; }
+  input[type=text], input[type=password], select, textarea, input[type=file] {
+    width: 100%; background: #0b1420; color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: 9px 11px; font: inherit; outline: none; transition: .16s;
   }
-  label { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 6px; }
-  input[type=text], input[type=password], select, textarea {
-    width: 100%; background: #0d1117; color: var(--text);
-    border: 1px solid var(--line); border-radius: 8px;
-    padding: 8px 10px; font: inherit; outline: none;
-  }
-  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
-  textarea { resize: vertical; min-height: 220px; font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+  input:focus, select:focus, textarea:focus { border-color: rgba(111, 195, 255, .55); box-shadow: 0 0 0 3px rgba(111, 195, 255, .08); }
+  textarea { resize: vertical; min-height: 160px; font-family: ui-monospace, Consolas, monospace; font-size: 13px; line-height: 1.7; }
   input[type=range] { width: 100%; accent-color: var(--accent); }
+  input[type=checkbox] { width: auto; accent-color: var(--accent); }
+
   .row { display: flex; gap: 10px; align-items: center; }
   .row > * { flex: 1; }
-  .row > button { flex: 0 0 auto; }
+  .row > button, .row > .fixed { flex: 0 0 auto; }
+
   button {
-    background: #1f6feb; color: #fff; border: 0; border-radius: 8px;
-    padding: 8px 14px; font: inherit; cursor: pointer;
+    background: linear-gradient(180deg, #2f7fd6, #2568ad);
+    color: #fff; border: 0; border-radius: 10px; padding: 9px 16px;
+    font: inherit; cursor: pointer; transition: .16s;
+    box-shadow: 0 6px 16px rgba(37, 104, 173, .28);
   }
-  button.ghost { background: #21262d; border: 1px solid var(--line); }
-  button:hover { filter: brightness(1.1); }
-  .big { font-size: 26px; font-weight: 600; }
-  .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
-  #logs { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto; }
-  .log { border-left: 3px solid var(--line); padding: 6px 10px; background: #0f141b; border-radius: 0 8px 8px 0; }
-  .log .meta { font-size: 12px; color: var(--muted); }
-  .log .q { color: #c9d6e4; }
-  .log .a { color: #9fd0a8; margin-top: 2px; }
-  .toast {
-    position: fixed; right: 24px; bottom: 24px; background: #1f6feb;
-    padding: 10px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s;
-    pointer-events: none;
+  button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  button.ghost {
+    background: rgba(255, 255, 255, .04); border: 1px solid var(--line);
+    box-shadow: none; color: var(--text);
   }
-  .toast.show { opacity: 1; }
-  .stickers { display: flex; flex-wrap: wrap; gap: 12px; }
-  .sticker { position: relative; width: 96px; }
-  .sticker img { width: 96px; height: 96px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
-  .sticker .tag { font-size: 11px; color: var(--muted); text-align: center; margin-top: 2px; }
+  button.small { padding: 6px 12px; font-size: 12px; }
+
+  .hint { color: var(--muted); font-size: 12px; margin-top: 8px; line-height: 1.7; white-space: pre-line; }
+  .big { font-size: 30px; font-weight: 600; letter-spacing: .01em; }
+  .big small { font-size: 13px; color: var(--muted); font-weight: 400; margin-left: 6px; }
+
+  .list { display: flex; flex-direction: column; gap: 10px; max-height: 460px; overflow-y: auto; }
+  .item {
+    border-left: 3px solid rgba(111, 195, 255, .35);
+    background: rgba(255, 255, 255, .025); border-radius: 0 10px 10px 0;
+    padding: 10px 14px;
+  }
+  .item .meta { font-size: 11px; color: var(--muted); letter-spacing: .02em; }
+  .item .q { margin-top: 2px; color: #cfe0f2; }
+  .item .a { margin-top: 4px; color: #a9d8b8; }
+
+  .stickers { display: flex; flex-wrap: wrap; gap: 14px; }
+  .sticker { position: relative; width: 92px; }
+  .sticker img { width: 92px; height: 92px; object-fit: cover; border-radius: 14px; border: 1px solid var(--line); background: #0b1420; }
+  .sticker .tag { font-size: 11px; color: var(--muted); text-align: center; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sticker button {
-    position: absolute; top: -8px; right: -8px; width: 22px; height: 22px;
-    padding: 0; line-height: 1; border-radius: 50%; background: #3d1d1d; color: #fff;
+    position: absolute; top: -7px; right: -7px; width: 22px; height: 22px; padding: 0;
+    border-radius: 50%; background: #43202a; color: #ffb4b4; box-shadow: none; font-size: 13px; line-height: 1;
+  }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(10px);
+    background: #1d3a5c; border: 1px solid rgba(111, 195, 255, .35);
+    padding: 10px 18px; border-radius: 999px; opacity: 0; transition: .22s;
+    pointer-events: none; font-size: 13px;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 860px) {
+    .app { flex-direction: column; }
+    .side { width: 100%; flex: none; height: auto; position: static; flex-direction: row; align-items: center; gap: 14px; overflow-x: auto; padding: 16px; }
+    nav { flex-direction: row; }
+    .side-foot { display: none; }
+    .main { padding: 18px; }
   }
 </style>
 </head>
 <body>
-<header>
-  <h1>🐟 大肥鱼<span>控制台</span></h1>
-  <span class="pill" id="stat-napcat">NapCat …</span>
-  <span class="pill" id="stat-uin">账号 —</span>
-  <span class="pill" id="stat-model">模型 —</span>
-  <span class="pill" id="stat-uptime">运行 —</span>
-  <span class="pill" id="stat-msgs">收 0 / 发 0</span>
-</header>
-
-<main class="grid">
-  <section class="card">
-    <h2>说话密度</h2>
-    <div class="big" id="level-name">正常</div>
-    <input type="range" id="chattiness" min="0" max="5" step="1" value="3">
-    <div class="hint" id="level-style">—</div>
-
-    <label>群聊触发方式</label>
-    <select id="group-mode">
-      <option value="at">只有 @ 它才回</option>
-      <option value="keyword">提到名字就回</option>
-      <option value="all">每句都接</option>
-    </select>
-
-    <div class="row" style="margin-top:16px">
-      <button onclick="saveBot()">保存</button>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="fish">🐳</div>
+      <div><b>蓝色大肥鱼</b><small>DeepSeek 拟人 · QQ</small></div>
     </div>
-  </section>
-
-  <section class="card">
-    <h2>模型</h2>
-    <label>服务商（选一个自动填地址）</label>
-    <select id="provider"><option value="">自定义</option></select>
-    <label>接口地址</label>
-    <input type="text" id="base-url" placeholder="https://api.deepseek.com/v1">
-    <label>API Key</label>
-    <input type="password" id="api-key" placeholder="sk-...">
-    <label>模型名</label>
-    <div class="row">
-      <input type="text" id="model-name" list="model-list" placeholder="deepseek-flash">
-      <button class="ghost" onclick="loadModels()">拉取</button>
-      <button class="ghost" onclick="testModel()">测试</button>
+    <nav>
+      <button class="nav active" data-tab="overview">概览</button>
+      <button class="nav" data-tab="model">模型</button>
+      <button class="nav" data-tab="persona">人格</button>
+      <button class="nav" data-tab="stickers">表情包</button>
+      <button class="nav" data-tab="reminders">提醒</button>
+      <button class="nav" data-tab="logs">对话</button>
+    </nav>
+    <div class="side-foot">
+      所有改动即时生效<br>密钥只存在本机
     </div>
-    <datalist id="model-list"></datalist>
-    <div class="hint" id="model-result">填好地址和 key 后点「测试」，能回一句就说明通了。</div>
-    <label>温度 <span id="temp-value">1.1</span></label>
-    <input type="range" id="temperature" min="0" max="2" step="0.1" value="1.1">
-    <div class="row" style="margin-top:16px">
-      <button onclick="saveModel()">保存模型设置</button>
-    </div>
-  </section>
+  </aside>
 
-  <section class="card">
-    <h2>防刷屏</h2>
-    <label style="display:flex;align-items:center;gap:8px;margin-top:0">
-      <input type="checkbox" id="guard-on" style="width:auto"> 开启监控
-    </label>
-    <label>时间窗（秒）</label>
-    <input type="text" id="guard-window" placeholder="60">
-    <label>窗口内最多几条</label>
-    <input type="text" id="guard-max" placeholder="20">
-    <label>拉黑多久（秒）</label>
-    <input type="text" id="guard-block" placeholder="3600">
-    <label>报警发给哪个 QQ</label>
-    <input type="text" id="guard-admin" placeholder="你的大号">
-    <div class="row" style="margin-top:14px">
-      <button onclick="saveGuard()">保存</button>
-    </div>
-    <div id="blacklist" style="margin-top:12px"></div>
-  </section>
-
-  <section class="card">
-    <h2>定时提醒</h2>
-    <div id="reminders" style="margin-top:4px"></div>
-  </section>
-
-  <section class="card wide">
-    <h2>人设（改完保存，下一条消息立刻生效）</h2>
-    <textarea id="persona" spellcheck="false"></textarea>
-    <div class="row" style="margin-top:12px">
-      <button onclick="savePersona()">保存人设</button>
-      <button class="ghost" onclick="restartNapcat()">重启 NapCat</button>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>模型配置档（一键切换）</h2>
-    <div id="profiles"><div class="hint">还没有配置档。把上面的模型设置填好，起个名字存下来。</div></div>
-    <label>起个名字</label>
-    <div class="row">
-      <input type="text" id="profile-name" placeholder="比如 阶跃套餐 / DeepSeek 官方">
-      <button class="ghost" onclick="saveAsProfile()">存为配置档</button>
-    </div>
-  </section>
-
-  <section class="card wide">
-    <h2>主人档案（它靠这个认人；没想好的空可以先留着）</h2>
-    <textarea id="profile" spellcheck="false" style="min-height:170px"></textarea>
-    <div class="row" style="margin-top:12px">
-      <button onclick="saveProfile()">保存档案</button>
+  <main class="main">
+    <div class="top">
+      <div class="chips">
+        <span class="chip" id="stat-napcat">QQ 未连接</span>
+        <span class="chip" id="stat-uin">账号 —</span>
+        <span class="chip" id="stat-model">模型 —</span>
+        <span class="chip" id="stat-uptime">运行 —</span>
+        <span class="chip" id="stat-msgs">收 0 / 发 0</span>
+      </div>
+      <button class="ghost small" onclick="restartNapcat()">重启 QQ</button>
     </div>
 
-    <h2 style="margin-top:24px">快递接口（可选，留空就走免费公共接口）</h2>
-    <label>快递100 客户编号 customer</label>
-    <input type="text" id="express-customer" placeholder="例如 ABCDEF123">
-    <label>快递100 密钥 key</label>
-    <input type="password" id="express-key" placeholder="留空即可">
-    <div class="row" style="margin-top:12px">
-      <button class="ghost" onclick="saveExpress()">保存快递配置</button>
-    </div>
+    <!-- 概览 -->
+    <section class="tab active" data-panel="overview">
+      <h1>今天的她</h1>
+      <p class="lead">调她说话的密度、群里的分寸，以及别让人把她刷爆。</p>
 
-    <h2 style="margin-top:24px">发邮件（可选，填了才能让它发邮件）</h2>
-    <label style="display:flex;align-items:center;gap:8px">
-      <input type="checkbox" id="email-on" style="width:auto"> 开启邮件功能
-    </label>
-    <label>发件邮箱（QQ 邮箱地址）</label>
-    <input type="text" id="email-user" placeholder="xxxxx@qq.com">
-    <label>授权码（不是登录密码）</label>
-    <input type="password" id="email-pass" placeholder="QQ 邮箱设置里生成的授权码">
-    <div class="row" style="margin-top:12px">
-      <button class="ghost" onclick="saveEmail()">保存邮件配置</button>
-    </div>
+      <div class="grid">
+        <div class="card">
+          <h2>说话密度</h2>
+          <div class="big" id="level-name">正常</div>
+          <input type="range" id="chattiness" min="0" max="5" step="1" value="3">
+          <div class="hint" id="level-style">—</div>
 
-    <h2 style="margin-top:24px">临时文件（视频下载目录）</h2>
-    <div class="hint" id="downloads-info">—</div>
-    <div class="row" style="margin-top:10px">
-      <button class="ghost" onclick="cleanDownloads()">清空下载缓存</button>
-    </div>
-  </section>
+          <label>群聊里怎么搭话</label>
+          <select id="group-mode">
+            <option value="at">被 @ 才回</option>
+            <option value="keyword">提到名字就回</option>
+            <option value="all">每句都接</option>
+          </select>
+          <div class="row" style="margin-top:16px">
+            <button onclick="saveBot()">保存</button>
+          </div>
+        </div>
 
-  <section class="card wide">
-    <h2>表情包库（她只从这里挑，所以放心放）</h2>
-    <div id="stickers" class="stickers"></div>
-    <div class="row" style="margin-top:12px">
-      <input type="file" id="sticker-file" accept="image/*" multiple>
-      <input type="text" id="sticker-tag" placeholder="标签，如 开心" style="flex:0 0 150px">
-      <button onclick="uploadSticker()">上传</button>
-    </div>
-    <div class="hint">标签决定她什么时候用：说「开心」就挑标签含「开心」的。上传多张会依次编号。</div>
+        <div class="card">
+          <h2>防刷屏</h2>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:0">
+            <input type="checkbox" id="guard-on"> 开启
+          </label>
+          <label>时间窗（秒）</label>
+          <input type="text" id="guard-window" placeholder="60">
+          <label>窗口内最多几条</label>
+          <input type="text" id="guard-max" placeholder="20">
+          <label>拉黑多久（秒）</label>
+          <input type="text" id="guard-block" placeholder="3600">
+          <label>报警发给哪个 QQ</label>
+          <input type="text" id="guard-admin" placeholder="你的大号">
+          <div class="row" style="margin-top:14px">
+            <button onclick="saveGuard()">保存</button>
+          </div>
+          <div class="list" id="blacklist" style="margin-top:14px"></div>
+        </div>
+      </div>
 
-    <label style="margin-top:18px">发送频率 <span id="sticker-chance-label">35%</span>（越低越“稀有”）</label>
-    <input type="range" id="sticker-chance" min="0" max="100" step="5" value="35">
-    <label>两条表情包之间至少隔多少秒</label>
-    <input type="text" id="sticker-cooldown" placeholder="120">
-    <div class="row" style="margin-top:10px">
-      <button class="ghost" onclick="saveStickerConfig()">保存频率设置</button>
-    </div>
-  </section>
+      <div class="card">
+        <h2>本机临时文件</h2>
+        <div class="hint" id="downloads-info">—</div>
+        <div class="row" style="margin-top:12px">
+          <button class="ghost small" onclick="cleanDownloads()">清空下载缓存</button>
+        </div>
+      </div>
+    </section>
 
-  <section class="card wide">
-    <h2>最近对话</h2>
-    <div id="logs"><div class="hint">还没有消息。去 QQ 里 @ 它一下。</div></div>
-  </section>
-</main>
+    <!-- 模型 -->
+    <section class="tab" data-panel="model">
+      <h1>她的脑子</h1>
+      <p class="lead">换服务商、换模型、调温度。填好点「测试」最准，会先自动保存。</p>
+
+      <div class="card">
+        <h2>接口</h2>
+        <label>服务商</label>
+        <select id="provider"><option value="">自定义</option></select>
+        <label>接口地址</label>
+        <input type="text" id="base-url" placeholder="https://api.deepseek.com/v1">
+        <label>API Key</label>
+        <input type="password" id="api-key" placeholder="sk-...">
+        <label>模型名</label>
+        <div class="row">
+          <input type="text" id="model-name" list="model-list" placeholder="deepseek-flash">
+          <button class="ghost small" onclick="loadModels()">拉取</button>
+          <button class="ghost small" onclick="testModel()">测试</button>
+        </div>
+        <datalist id="model-list"></datalist>
+        <div class="hint" id="model-result">填好地址和 key 后点「测试」。</div>
+        <label>温度 <span id="temp-value">1.1</span></label>
+        <input type="range" id="temperature" min="0" max="2" step="0.1" value="1.1">
+        <div class="row" style="margin-top:16px">
+          <button onclick="saveModel()">保存模型设置</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>配置档</h2>
+        <div class="list" id="profiles"></div>
+        <label>给当前设置起个名字</label>
+        <div class="row">
+          <input type="text" id="profile-name" placeholder="比如 阶跃套餐 / DeepSeek 官方">
+          <button class="ghost small" onclick="saveAsProfile()">存为配置档</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 人格 -->
+    <section class="tab" data-panel="persona">
+      <h1>她是谁</h1>
+      <p class="lead">人设决定语气，档案决定她认得谁。改完保存，下一条消息生效。</p>
+
+      <div class="card">
+        <h2>人设</h2>
+        <textarea id="persona" spellcheck="false" style="min-height:260px"></textarea>
+        <div class="row" style="margin-top:12px">
+          <button onclick="savePersona()">保存人设</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>主人档案</h2>
+        <textarea id="profile" spellcheck="false" style="min-height:170px"></textarea>
+        <div class="row" style="margin-top:12px">
+          <button onclick="saveProfile()">保存档案</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2>快递接口（可选）</h2>
+          <label>customer</label>
+          <input type="text" id="express-customer" placeholder="留空走免费接口">
+          <label>key</label>
+          <input type="password" id="express-key" placeholder="留空即可">
+          <div class="row" style="margin-top:12px">
+            <button class="ghost small" onclick="saveExpress()">保存</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>发邮件（可选）</h2>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:0">
+            <input type="checkbox" id="email-on"> 开启邮件功能
+          </label>
+          <label>发件邮箱</label>
+          <input type="text" id="email-user" placeholder="xxxxx@qq.com">
+          <label>授权码</label>
+          <input type="password" id="email-pass" placeholder="QQ 邮箱设置里生成">
+          <div class="row" style="margin-top:12px">
+            <button class="ghost small" onclick="saveEmail()">保存</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 表情包 -->
+    <section class="tab" data-panel="stickers">
+      <h1>她的表情包</h1>
+      <p class="lead">她只从这里挑图。名字就是标签，越稀有越好笑。</p>
+
+      <div class="card">
+        <h2>图库</h2>
+        <div class="stickers" id="stickers"></div>
+        <div class="row" style="margin-top:16px">
+          <input type="file" id="sticker-file" accept="image/*" multiple>
+          <input type="text" id="sticker-tag" placeholder="标签，如 开心" class="fixed" style="flex:0 0 150px">
+          <button class="ghost small" onclick="uploadSticker()">上传</button>
+        </div>
+        <div class="hint">上传多张会依次编号；标签决定她什么时候用。</div>
+      </div>
+
+      <div class="card">
+        <h2>发送节奏</h2>
+        <div class="big" id="sticker-chance-label">35%</div>
+        <input type="range" id="sticker-chance" min="0" max="100" step="5" value="35">
+        <div class="hint">她每次想发图时按这个概率放行，越低越「稀有」。</div>
+        <label>两条之间至少隔多少秒</label>
+        <input type="text" id="sticker-cooldown" placeholder="120">
+        <div class="row" style="margin-top:14px">
+          <button onclick="saveStickerConfig()">保存</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 提醒 -->
+    <section class="tab" data-panel="reminders">
+      <h1>她替你记着的事</h1>
+      <p class="lead">在 QQ 里说「明早七点提醒我跑步」，这里就会出现。</p>
+      <div class="card">
+        <div class="list" id="reminders"></div>
+      </div>
+    </section>
+
+    <!-- 对话 -->
+    <section class="tab" data-panel="logs">
+      <h1>最近说了什么</h1>
+      <p class="lead">只保留最近的记录，存在本机 data 目录。</p>
+      <div class="card">
+        <div class="list" id="logs"></div>
+      </div>
+    </section>
+  </main>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -250,6 +386,16 @@
 const $ = (sel) => document.querySelector(sel);
 let levels = [];
 let firstLoad = true;
+
+document.querySelectorAll('.nav').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav').forEach((b) => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+    btn.classList.add('active');
+    const panel = document.querySelector(`.tab[data-panel="${btn.dataset.tab}"]`);
+    if (panel) panel.classList.add('active');
+  });
+});
 
 function toast(msg) {
   const el = $('#toast');
@@ -270,6 +416,10 @@ async function post(path, body) {
   return data;
 }
 
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
 function applyLevel(value) {
   const item = levels.find((x) => x.level === Number(value));
   if (!item) return;
@@ -280,19 +430,73 @@ function applyLevel(value) {
 function renderLogs(logs) {
   const box = $('#logs');
   if (!logs.length) {
-    box.innerHTML = '<div class="hint">还没有消息。去 QQ 里 @ 它一下。</div>';
+    box.innerHTML = '<div class="hint">还没有消息。</div>';
     return;
   }
   box.innerHTML = logs.slice().reverse().map((log) => `
-    <div class="log">
+    <div class="item">
       <div class="meta">${log.t} · ${log.scene} · ${log.user}</div>
       <div class="q">${escapeHtml(log.text)}</div>
       <div class="a">${escapeHtml(log.reply || '（没回）')}</div>
     </div>`).join('');
 }
 
-function escapeHtml(text) {
-  return String(text).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function renderBlacklist(items) {
+  const box = $('#blacklist');
+  if (!items || !items.length) {
+    box.innerHTML = '<div class="hint">黑名单是空的。</div>';
+    return;
+  }
+  box.innerHTML = items.map((item) => `
+    <div class="item">
+      <div class="meta">${item.user} · 还剩 ${item.remaining_minutes} 分钟（到 ${item.until}）</div>
+      <button class="ghost small" style="margin-top:8px" onclick="unblockUser('${item.user}')">解除</button>
+    </div>`).join('');
+}
+
+function renderReminders(items) {
+  const box = $('#reminders');
+  if (!items || !items.length) {
+    box.innerHTML = '<div class="hint">还没有提醒。</div>';
+    return;
+  }
+  box.innerHTML = items.slice(0, 20).map((item) => `
+    <div class="item">
+      <div class="meta">${item.due_text}${item.repeat === 'daily' ? ' · 每天' : ''} · ${item.user}</div>
+      <div class="q">${escapeHtml(item.text)}</div>
+      <button class="ghost small" style="margin-top:8px" onclick="removeReminder('${item.id}')">删掉</button>
+    </div>`).join('');
+}
+
+function renderProfiles(items) {
+  const box = $('#profiles');
+  if (!items || !items.length) {
+    box.innerHTML = '<div class="hint">还没有配置档。</div>';
+    return;
+  }
+  box.innerHTML = items.map((item) => `
+    <div class="item"${item.active ? ' style="border-left-color:#6fc3ff"' : ''}>
+      <div class="meta">${escapeHtml(item.name)}${item.active ? ' · 使用中' : ''}</div>
+      <div class="q">${escapeHtml(item.model || '')} · ${escapeHtml(item.base || '')}</div>
+      <div class="row" style="margin-top:8px">
+        <button class="ghost small" onclick="applyProfile('${item.id}')">切换</button>
+        <button class="ghost small" onclick="deleteProfile('${item.id}')">删除</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderStickers(items) {
+  const box = $('#stickers');
+  if (!items || !items.length) {
+    box.innerHTML = '<div class="hint">还没有表情包。</div>';
+    return;
+  }
+  box.innerHTML = items.map((item) => `
+    <div class="sticker">
+      <img src="/stickers/${encodeURIComponent(item.name)}" alt="${escapeHtml(item.tag)}">
+      <div class="tag">${escapeHtml(item.tag)}</div>
+      <button onclick="deleteSticker('${item.name}')">×</button>
+    </div>`).join('');
 }
 
 async function refresh() {
@@ -300,10 +504,11 @@ async function refresh() {
   const s = await res.json();
   levels = s.levels;
 
-  $('#stat-napcat').textContent = s.runtime.napcat_online ? 'NapCat 在线' : 'NapCat 离线';
-  $('#stat-napcat').className = 'pill ' + (s.runtime.napcat_online ? 'ok' : 'bad');
+  const napcat = $('#stat-napcat');
+  napcat.textContent = s.runtime.napcat_online ? 'QQ 在线' : 'QQ 离线';
+  napcat.className = 'chip ' + (s.runtime.napcat_online ? 'on' : 'off');
   $('#stat-uin').textContent = s.runtime.bot_uin ? '账号 ' + s.runtime.bot_uin : '账号 —';
-  $('#stat-model').textContent = '模型 ' + s.config.model.name;
+  $('#stat-model').textContent = s.config.model.name;
   const minutes = Math.floor(s.runtime.uptime / 60);
   $('#stat-uptime').textContent = '运行 ' + (minutes >= 60 ? Math.floor(minutes / 60) + ' 小时' : minutes + ' 分钟');
   $('#stat-msgs').textContent = `收 ${s.runtime.messages_in} / 发 ${s.runtime.messages_out}`;
@@ -316,22 +521,6 @@ async function refresh() {
     $('#temp-value').textContent = s.config.model.temperature;
     $('#base-url').value = s.llm.base_url;
     $('#api-key').placeholder = s.llm.has_key ? '已保存：' + s.llm.key_masked : 'sk-...';
-
-    const provider = $('#provider');
-    provider.innerHTML = '<option value="">自定义</option>' +
-      (s.providers || []).map((item) => `<option value="${item.base}">${item.name}</option>`).join('');
-    provider.addEventListener('change', () => {
-      if (provider.value) {
-        $('#base-url').value = provider.value;
-        const hit = (s.providers || []).find((x) => x.base === provider.value);
-        $('#model-result').textContent = hit ? ('参考模型：' + hit.hint) : '';
-      }
-    });
-
-    if (s.llm.has_key && s.llm.key_length < 20) {
-      $('#model-result').textContent =
-        '⚠ 当前 key 只有 ' + s.llm.key_length + ' 个字符，很可能没复制全。重新粘贴一次再测。';
-    }
     $('#persona').value = s.persona;
     $('#guard-on').checked = !!s.guard.enabled;
     $('#guard-window').value = s.guard.window_seconds;
@@ -340,14 +529,32 @@ async function refresh() {
     $('#guard-admin').value = s.guard.admin_qq || '';
     $('#profile').value = s.profile || '';
     $('#express-customer').value = s.express.customer || '';
-    $('#express-key').placeholder = s.express.has_key ? '已保存（重新填会覆盖）' : '留空即可';
+    $('#express-key').placeholder = s.express.has_key ? '已保存' : '留空即可';
+    $('#email-on').checked = !!(s.email && s.email.enabled);
+    $('#email-user').value = (s.email && s.email.user) || '';
+    $('#email-pass').placeholder = (s.email && s.email.has_password) ? '已保存' : '授权码';
     const stickerCfg = s.sticker || {};
     $('#sticker-chance').value = Math.round((stickerCfg.chance ?? 0.35) * 100);
     $('#sticker-chance-label').textContent = $('#sticker-chance').value + '%';
     $('#sticker-cooldown').value = stickerCfg.cooldown_seconds ?? 120;
-    $('#email-on').checked = !!(s.email && s.email.enabled);
-    $('#email-user').value = (s.email && s.email.user) || '';
-    $('#email-pass').placeholder = (s.email && s.email.has_password) ? '已保存（重新填会覆盖）' : 'QQ 邮箱授权码';
+    $('#sticker-chance').addEventListener('input', (e) => {
+      $('#sticker-chance-label').textContent = e.target.value + '%';
+    });
+
+    const provider = $('#provider');
+    provider.innerHTML = '<option value="">自定义</option>' +
+      (s.providers || []).map((p) => `<option value="${p.base}">${p.name}</option>`).join('');
+    provider.addEventListener('change', () => {
+      if (!provider.value) return;
+      $('#base-url').value = provider.value;
+      const hit = (s.providers || []).find((x) => x.base === provider.value);
+      $('#model-result').textContent = hit ? ('参考模型：' + hit.hint) : '';
+    });
+
+    if (s.llm.has_key && s.llm.key_length < 20) {
+      $('#model-result').textContent =
+        '⚠ 当前 key 只有 ' + s.llm.key_length + ' 个字符，可能没复制全。';
+    }
     firstLoad = false;
   }
 
@@ -360,62 +567,37 @@ async function refresh() {
 
   const d = s.downloads || {};
   $('#downloads-info').textContent =
-    `${d.path || 'data/downloads'} · 当前 ${d.count || 0} 个文件 · ${d.mb || 0} MB`;
-}
-
-async function cleanDownloads() {
-  try {
-    const data = await post('/api/downloads/clean');
-    toast(`清掉了 ${data.removed} 个文件`);
-    refresh();
-  } catch (err) { toast('清理失败：' + err.message); }
-}
-
-function renderReminders(items) {
-  const box = $('#reminders');
-  if (!items || !items.length) {
-    box.innerHTML = '<div class="hint">还没有提醒。在 QQ 里说「明早七点提醒我跑步」就行。</div>';
-    return;
-  }
-  box.innerHTML = items.slice(0, 8).map((item) => `
-    <div class="log">
-      <div class="meta">${item.due_text}${item.repeat === 'daily' ? ' · 每天' : ''} · ${item.user}</div>
-      <div class="q">${escapeHtml(item.text)}</div>
-      <button class="ghost" style="margin-top:6px" onclick="removeReminder('${item.id}')">删掉</button>
-    </div>`).join('');
-}
-
-async function removeReminder(id) {
-  try {
-    await post('/api/reminders/remove', { id });
-    toast('已删除');
-    refresh();
-  } catch (err) { toast('删除失败：' + err.message); }
-}
-
-function renderBlacklist(items) {
-  const box = $('#blacklist');
-  if (!items || !items.length) {
-    box.innerHTML = '<div class="hint">黑名单是空的。</div>';
-    return;
-  }
-  box.innerHTML = items.map((item) => `
-    <div class="log">
-      <div class="meta">${item.user} · 还剩 ${item.remaining_minutes} 分钟（到 ${item.until}）</div>
-      <button class="ghost" style="margin-top:6px" onclick="unblockUser('${item.user}')">解除</button>
-    </div>`).join('');
+    `${d.path || 'data/downloads'} · 当前 ${d.count || 0} 个 · ${d.mb || 0} MB`;
 }
 
 async function saveBot() {
   try {
     await post('/api/config', {
-      bot: {
-        chattiness: Number($('#chattiness').value),
-        group_mode: $('#group-mode').value
-      }
+      bot: { chattiness: Number($('#chattiness').value), group_mode: $('#group-mode').value }
     });
-    toast('已保存，下一条消息生效');
+    toast('已保存');
   } catch (err) { toast('保存失败：' + err.message); }
+}
+
+async function saveGuard() {
+  try {
+    await post('/api/guard', {
+      enabled: $('#guard-on').checked,
+      window_seconds: Number($('#guard-window').value) || 60,
+      max_messages: Number($('#guard-max').value) || 20,
+      block_seconds: Number($('#guard-block').value) || 3600,
+      admin_qq: $('#guard-admin').value.trim()
+    });
+    toast('防刷设置已保存');
+  } catch (err) { toast('保存失败：' + err.message); }
+}
+
+async function unblockUser(user) {
+  try {
+    await post('/api/guard/unblock', { user });
+    toast('已解除 ' + user);
+    refresh();
+  } catch (err) { toast('失败：' + err.message); }
 }
 
 async function saveModelQuiet() {
@@ -424,99 +606,88 @@ async function saveModelQuiet() {
     api_key: $('#api-key').value.trim()
   });
   await post('/api/config', {
-    model: {
-      name: $('#model-name').value.trim(),
-      temperature: Number($('#temperature').value)
-    }
+    model: { name: $('#model-name').value.trim(), temperature: Number($('#temperature').value) }
   });
   $('#api-key').value = '';
-  if (data.key_masked) {
-    $('#api-key').placeholder = '已保存：' + data.key_masked;
-  }
+  if (data.key_masked) $('#api-key').placeholder = '已保存：' + data.key_masked;
   return data;
 }
 
 async function saveModel() {
   try {
     const data = await saveModelQuiet();
-    if (data.warning) {
-      $('#model-result').textContent = '⚠ ' + data.warning;
-      toast('已保存，但 key 可能不完整');
-    } else {
-      $('#model-result').textContent = '模型设置已保存，点「测试」验证一下。';
-      toast('模型设置已保存');
-    }
+    $('#model-result').textContent = data.warning ? ('⚠ ' + data.warning) : '模型设置已保存，点「测试」验证一下。';
+    toast(data.warning ? '已保存，但 key 可能不完整' : '已保存');
   } catch (err) {
     $('#model-result').textContent = '保存失败：' + err.message;
-    toast('保存失败');
   }
 }
 
 async function loadModels() {
   const box = $('#model-result');
-  box.textContent = '正在保存并拉取模型列表……';
-  try {
-    await saveModelQuiet();
-  } catch (err) {
-    box.textContent = '保存失败：' + err.message;
-    return;
-  }
+  box.textContent = '正在保存并拉取……';
+  try { await saveModelQuiet(); } catch (err) { box.textContent = '保存失败：' + err.message; return; }
   try {
     const data = await post('/api/models');
     if (!data.ok) {
-      box.textContent = '拉取失败：' + (data.message || '未知错误') +
-        '\n（有些服务商不提供模型列表接口，直接在模型名里手填也可以）';
-      toast('拉取失败');
+      box.textContent = '拉取失败：' + (data.message || '') + '\n（有些服务商不提供模型列表，直接手填模型名也行）';
       return;
     }
     $('#model-list').innerHTML = data.models.map((m) => `<option value="${m}">`).join('');
-    box.textContent = '拉到 ' + data.models.length + ' 个模型：' + data.models.slice(0, 12).join('、');
-    toast('拉到 ' + data.models.length + ' 个模型');
-  } catch (err) {
-    box.textContent = '拉取失败：' + err.message;
-    toast('拉取失败');
-  }
+    box.textContent = '拉到 ' + data.models.length + ' 个：' + data.models.slice(0, 12).join('、');
+  } catch (err) { box.textContent = '拉取失败：' + err.message; }
 }
 
 async function testModel() {
   const box = $('#model-result');
   box.textContent = '正在保存并测试……';
-  try {
-    await saveModelQuiet();
-  } catch (err) {
-    box.textContent = '保存失败：' + err.message;
-    return;
-  }
+  try { await saveModelQuiet(); } catch (err) { box.textContent = '保存失败：' + err.message; return; }
   try {
     const data = await post('/api/llm/test');
-    box.textContent = data.ok
-      ? '✅ 通了，模型回了：' + data.reply
-      : '❌ 失败：' + (data.message || '未知错误');
-  } catch (err) {
-    box.textContent = '❌ 失败：' + err.message;
-  }
+    box.textContent = data.ok ? '✅ 通了，模型回了：' + data.reply : '❌ 失败：' + (data.message || '');
+  } catch (err) { box.textContent = '❌ 失败：' + err.message; }
 }
 
-function renderProfiles(items) {
-  const box = $('#profiles');
-  if (!items || !items.length) {
-    box.innerHTML = '<div class="hint">还没有配置档。把上面的模型设置填好，起个名字存下来。</div>';
-    return;
-  }
-  box.innerHTML = items.map((item) => `
-    <div class="log"${item.active ? ' style="border-left-color:#4f9cf9"' : ''}>
-      <div class="meta">${escapeHtml(item.name)}${item.active ? ' · 使用中' : ''}</div>
-      <div class="q">${escapeHtml(item.model || '')} · ${escapeHtml(item.base || '')}</div>
-      <div class="row" style="margin-top:6px">
-        <button class="ghost" onclick="applyProfile('${item.id}')">切换</button>
-        <button class="ghost" onclick="deleteProfile('${item.id}')">删除</button>
-      </div>
-    </div>`).join('');
+async function saveProfile() {
+  try {
+    await post('/api/profile', { text: $('#profile').value });
+    toast('档案已保存');
+  } catch (err) { toast('保存失败：' + err.message); }
+}
+
+async function savePersona() {
+  try {
+    await post('/api/persona', { text: $('#persona').value });
+    toast('人设已保存');
+  } catch (err) { toast('保存失败：' + err.message); }
+}
+
+async function saveExpress() {
+  try {
+    await post('/api/express', {
+      customer: $('#express-customer').value.trim(),
+      api_key: $('#express-key').value.trim()
+    });
+    $('#express-key').value = '';
+    toast('快递配置已保存');
+  } catch (err) { toast('保存失败：' + err.message); }
+}
+
+async function saveEmail() {
+  try {
+    await post('/api/email', {
+      enabled: $('#email-on').checked,
+      user: $('#email-user').value.trim(),
+      password: $('#email-pass').value.trim()
+    });
+    $('#email-pass').value = '';
+    toast('邮件配置已保存');
+  } catch (err) { toast('保存失败：' + err.message); }
 }
 
 async function saveAsProfile() {
   const name = $('#profile-name').value.trim();
-  if (!name) { toast('先给它起个名字'); return; }
+  if (!name) { toast('先起个名字'); return; }
   try {
     await post('/api/profiles/add', {
       name,
@@ -550,59 +721,28 @@ async function applyProfile(id) {
 async function deleteProfile(id) {
   try {
     await post('/api/profiles/delete', { id });
-    toast('已删除');
     refresh();
   } catch (err) { toast('删除失败：' + err.message); }
 }
 
-async function saveProfile() {
+async function removeReminder(id) {
   try {
-    await post('/api/profile', { text: $('#profile').value });
-    toast('档案已保存，下一条消息生效');
-  } catch (err) { toast('保存失败：' + err.message); }
+    await post('/api/reminders/remove', { id });
+    refresh();
+  } catch (err) { toast('删除失败：' + err.message); }
 }
 
-async function saveExpress() {
+async function cleanDownloads() {
   try {
-    await post('/api/express', {
-      customer: $('#express-customer').value.trim(),
-      api_key: $('#express-key').value.trim()
-    });
-    $('#express-key').value = '';
-    toast('快递配置已保存');
-  } catch (err) { toast('保存失败：' + err.message); }
-}
-
-async function saveEmail() {
-  try {
-    await post('/api/email', {
-      enabled: $('#email-on').checked,
-      user: $('#email-user').value.trim(),
-      password: $('#email-pass').value.trim()
-    });
-    $('#email-pass').value = '';
-    toast('邮件配置已保存');
-  } catch (err) { toast('保存失败：' + err.message); }
-}
-
-function renderStickers(items) {
-  const box = $('#stickers');
-  if (!items || !items.length) {
-    box.innerHTML = '<div class="hint">还没有表情包。选几张图上传吧。</div>';
-    return;
-  }
-  box.innerHTML = items.map((item) => `
-    <div class="sticker">
-      <img src="/stickers/${encodeURIComponent(item.name)}" alt="${escapeHtml(item.tag)}">
-      <div class="tag">${escapeHtml(item.tag)}</div>
-      <button onclick="deleteSticker('${item.name}')">×</button>
-    </div>`).join('');
+    const data = await post('/api/downloads/clean');
+    toast(`清掉了 ${data.removed} 个文件`);
+    refresh();
+  } catch (err) { toast('清理失败：' + err.message); }
 }
 
 async function uploadSticker() {
   const input = $('#sticker-file');
   if (!input.files.length) { toast('先选图片'); return; }
-
   const tag = $('#sticker-tag').value.trim() || '其他';
   for (const file of input.files) {
     const form = new FormData();
@@ -623,7 +763,6 @@ async function uploadSticker() {
 async function deleteSticker(name) {
   try {
     await post('/api/stickers/delete', { name });
-    toast('已删除');
     refresh();
   } catch (err) { toast('删除失败：' + err.message); }
 }
@@ -636,35 +775,8 @@ async function saveStickerConfig() {
         cooldown_seconds: Number($('#sticker-cooldown').value) || 120
       }
     });
-    toast('表情包频率已保存');
-  } catch (err) { toast('保存失败：' + err.message); }
-}
-
-async function saveGuard() {
-  try {
-    await post('/api/guard', {
-      enabled: $('#guard-on').checked,
-      window_seconds: Number($('#guard-window').value) || 60,
-      max_messages: Number($('#guard-max').value) || 20,
-      block_seconds: Number($('#guard-block').value) || 3600,
-      admin_qq: $('#guard-admin').value.trim()
-    });
-    toast('防刷设置已保存');
-  } catch (err) { toast('保存失败：' + err.message); }
-}
-
-async function unblockUser(user) {
-  try {
-    await post('/api/guard/unblock', { user });
-    toast('已解除 ' + user);
-    refresh();
-  } catch (err) { toast('失败：' + err.message); }
-}
-
-async function savePersona() {
-  try {
-    await post('/api/persona', { text: $('#persona').value });
-    toast('人设已保存');
+    $('#sticker-chance-label').textContent = $('#sticker-chance').value + '%';
+    toast('已保存');
   } catch (err) { toast('保存失败：' + err.message); }
 }
 

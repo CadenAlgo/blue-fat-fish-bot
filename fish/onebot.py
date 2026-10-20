@@ -229,6 +229,12 @@ class OneBotServer:
         if not text and not images:
             return
 
+        # 对方开了勿扰/自动回复：这种消息一律不理，否则两边会互相触发死循环
+        stripped = text.lstrip(" \t\r\n")
+        if stripped.startswith(("[自动回复]", "【自动回复】", "[自動回覆]")):
+            print("[跳过] 自动回复消息")
+            return
+
         # 兜底去重：同一个人 3 秒内发来一模一样的内容，只处理一次
         marker = f"{user_id}:{text or ('img' + str(len(images)))}"
         now = time.monotonic()
