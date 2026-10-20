@@ -1,0 +1,38 @@
+{
+  "bot": {
+    "names": ["大肥鱼", "鱼鱼"],
+    "group_mode": "at",
+    "chattiness": 3,
+    "reply_chunk": 300,
+    "quote_reply": false
+  },
+  "model": {
+    "name": "deepseek-flash",
+    "temperature": 1.1,
+    "max_steps": 6,
+    "max_history": 12
+  },
+  "search": {
+    "enabled": true,
+    "max_results": 5,
+    "fetch_chars": 3000
+  },
+  "guard": {
+    "enabled": true,
+    "window_seconds": 60,
+    "max_messages": 20,
+    "block_seconds": 3600,
+    "admin_qq": "",
+    "notify_admin": true,
+    "notice_to_user": "喵，你刷得太密了，本鱼先躲一小时，消停点再来。"
+  },
+  "server": {
+    "onebot_port": 3001,
+    "webui_port": 8765,
+    "open_browser": false
+  },
+  "napcat": {
+    "dir": "../napcat/shell",
+    "auto_start": true
+  }
+}
