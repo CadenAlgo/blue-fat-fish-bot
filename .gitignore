@@ -1,7 +1,14 @@
 .venv/
 __pycache__/
 *.pyc
+*.log
+
+# 隐私与运行时数据
 .env
 config.json
 data/
-*.log
+profile.md
+
+# 个人表情包（放自己的图，不要提交）
+stickers/*
+!stickers/.gitkeep
