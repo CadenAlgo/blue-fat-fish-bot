@@ -32,10 +32,15 @@ def config_dir() -> Path:
 
 
 def onebot_config() -> Path | None:
+    """取最近改过的那个账号配置——换号之后不能用旧号的。"""
     directory = config_dir()
     if not directory.exists():
         return None
-    files = sorted(directory.glob("onebot11_*.json"))
+    files = sorted(
+        directory.glob("onebot11_*.json"),
+        key=lambda item: item.stat().st_mtime,
+        reverse=True,
+    )
     return files[0] if files else None
 
 
@@ -208,9 +213,17 @@ async def watch(state: State) -> None:
             except Exception:
                 print(f"[二维码] 需要登录，图片在：{path}")
 
-        # 首次登录会新建配置文件：补上连接配置，等下次重启生效
-        if not _patched and not state.napcat_online and onebot_config() is not None:
+        # 新号登录会新建配置文件：只认「这次启动之后才出现」的那份
+        config_path = onebot_config()
+        fresh = False
+        if config_path is not None:
+            try:
+                fresh = config_path.stat().st_mtime > started
+            except OSError:
+                fresh = False
+
+        if not _patched and not state.napcat_online and fresh:
             _patched = True
             port = int(settings.load()["server"]["onebot_port"])
             if ensure_client(port):
-                print("[配置] 已写入连接配置，重启 NapCat 后生效（控制台有按钮）")
+                print("[配置] 检测到新账号，已写入连接配置；点一下「重启 QQ」就能接上")
