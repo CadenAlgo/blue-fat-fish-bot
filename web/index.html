@@ -168,6 +168,7 @@
     </div>
     <nav>
       <button class="nav active" data-tab="overview">概览</button>
+      <button class="nav" data-tab="humanize">拟人</button>
       <button class="nav" data-tab="model">模型</button>
       <button class="nav" data-tab="persona">人格</button>
       <button class="nav" data-tab="stickers">表情包</button>
@@ -206,6 +207,7 @@
           <label>群聊里怎么搭话</label>
           <select id="group-mode">
             <option value="at">被 @ 才回</option>
+            <option value="occasional">@ 必回，偶尔也插一句</option>
             <option value="keyword">提到名字就回</option>
             <option value="all">每句都接</option>
           </select>
@@ -239,6 +241,82 @@
         <div class="hint" id="downloads-info">—</div>
         <div class="row" style="margin-top:12px">
           <button class="ghost small" onclick="cleanDownloads()">清空下载缓存</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 拟人 -->
+    <section class="tab" data-panel="humanize">
+      <h1>像个活人</h1>
+      <p class="lead">延迟、分段、作息、偶尔主动开口。不是装，是别让行为呈现机器特征。</p>
+
+      <div class="grid">
+        <div class="card">
+          <h2>回复节奏</h2>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:0">
+            <input type="checkbox" id="hz-enabled"> 开启拟人模式
+          </label>
+          <label>看到消息后等多久才回（秒）</label>
+          <div class="row">
+            <input type="text" id="hz-read-min" placeholder="3">
+            <input type="text" id="hz-read-max" placeholder="12">
+          </div>
+          <label>打字速度（秒/字）</label>
+          <input type="text" id="hz-per-char" placeholder="0.12">
+          <label>单段打字时间上下限（秒）</label>
+          <div class="row">
+            <input type="text" id="hz-type-min" placeholder="2">
+            <input type="text" id="hz-type-max" placeholder="15">
+          </div>
+          <label>偶尔不回的概率（0~1）</label>
+          <input type="text" id="hz-skip" placeholder="0.12">
+        </div>
+
+        <div class="card">
+          <h2>分段与作息</h2>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:0">
+            <input type="checkbox" id="hz-split"> 长回复拆成几条发
+          </label>
+          <label>最多拆几条</label>
+          <input type="text" id="hz-split-max" placeholder="3">
+          <label>两条之间隔多久（秒）</label>
+          <div class="row">
+            <input type="text" id="hz-gap-min" placeholder="2">
+            <input type="text" id="hz-gap-max" placeholder="8">
+          </div>
+          <label>作息：几点睡 / 几点醒</label>
+          <div class="row">
+            <input type="text" id="hz-sleep-start" placeholder="01:30">
+            <input type="text" id="hz-sleep-end" placeholder="08:30">
+          </div>
+          <div class="hint">这段时间里它完全不回消息，也不主动说话。</div>
+        </div>
+
+        <div class="card">
+          <h2>群里插话</h2>
+          <label>没被 @ 时插一句的概率（0~1）</label>
+          <input type="text" id="hz-chime" placeholder="0.25">
+          <div class="hint">配合「群聊里怎么搭话」里的「@ 必回，偶尔也插一句」使用。</div>
+        </div>
+
+        <div class="card">
+          <h2>主动开口</h2>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:0">
+            <input type="checkbox" id="hz-proactive"> 允许它偶尔主动说一句
+          </label>
+          <label>每次掷骰子的命中率（0~1）</label>
+          <input type="text" id="hz-pro-chance" placeholder="0.25">
+          <label>多久掷一次（分钟）</label>
+          <input type="text" id="hz-pro-interval" placeholder="60">
+          <label>每天最多主动几次</label>
+          <input type="text" id="hz-pro-max" placeholder="3">
+          <div class="hint">新号前三天建议先关掉——没人说话时主动发消息，是最容易被判机器人的行为。</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <button onclick="saveHumanize()">保存拟人设置</button>
         </div>
       </div>
     </section>
@@ -541,6 +619,26 @@ async function refresh() {
       $('#sticker-chance-label').textContent = e.target.value + '%';
     });
 
+    const hz = s.humanize || {};
+    $('#hz-enabled').checked = hz.enabled !== false;
+    $('#hz-read-min').value = hz.read_delay_min ?? 3;
+    $('#hz-read-max').value = hz.read_delay_max ?? 12;
+    $('#hz-per-char').value = hz.typing_per_char ?? 0.12;
+    $('#hz-type-min').value = hz.typing_min ?? 2;
+    $('#hz-type-max').value = hz.typing_max ?? 15;
+    $('#hz-skip').value = hz.skip_chance ?? 0.12;
+    $('#hz-split').checked = hz.split_replies !== false;
+    $('#hz-split-max').value = hz.split_max ?? 3;
+    $('#hz-gap-min').value = hz.split_gap_min ?? 2;
+    $('#hz-gap-max').value = hz.split_gap_max ?? 8;
+    $('#hz-sleep-start').value = hz.sleep_start ?? '01:30';
+    $('#hz-sleep-end').value = hz.sleep_end ?? '08:30';
+    $('#hz-chime').value = hz.group_reply_chance ?? 0.25;
+    $('#hz-proactive').checked = hz.proactive !== false;
+    $('#hz-pro-chance').value = hz.proactive_chance ?? 0.25;
+    $('#hz-pro-interval').value = hz.proactive_interval_minutes ?? 60;
+    $('#hz-pro-max').value = hz.proactive_daily_max ?? 3;
+
     const provider = $('#provider');
     provider.innerHTML = '<option value="">自定义</option>' +
       (s.providers || []).map((p) => `<option value="${p.base}">${p.name}</option>`).join('');
@@ -767,8 +865,35 @@ async function deleteSticker(name) {
   } catch (err) { toast('删除失败：' + err.message); }
 }
 
-async function saveStickerConfig() {
+async function saveHumanize() {
   try {
+    await post('/api/config', {
+      humanize: {
+        enabled: $('#hz-enabled').checked,
+        read_delay_min: Number($('#hz-read-min').value) || 0,
+        read_delay_max: Number($('#hz-read-max').value) || 0,
+        typing_per_char: Number($('#hz-per-char').value) || 0,
+        typing_min: Number($('#hz-type-min').value) || 0,
+        typing_max: Number($('#hz-type-max').value) || 0,
+        skip_chance: Number($('#hz-skip').value) || 0,
+        split_replies: $('#hz-split').checked,
+        split_max: Number($('#hz-split-max').value) || 1,
+        split_gap_min: Number($('#hz-gap-min').value) || 0,
+        split_gap_max: Number($('#hz-gap-max').value) || 0,
+        sleep_start: $('#hz-sleep-start').value.trim(),
+        sleep_end: $('#hz-sleep-end').value.trim(),
+        group_reply_chance: Number($('#hz-chime').value) || 0,
+        proactive: $('#hz-proactive').checked,
+        proactive_chance: Number($('#hz-pro-chance').value) || 0,
+        proactive_interval_minutes: Number($('#hz-pro-interval').value) || 60,
+        proactive_daily_max: Number($('#hz-pro-max').value) || 0
+      }
+    });
+    toast('拟人设置已保存');
+  } catch (err) { toast('保存失败：' + err.message); }
+}
+
+async function saveStickerConfig() {  try {
     await post('/api/config', {
       sticker: {
         chance: Number($('#sticker-chance').value) / 100,

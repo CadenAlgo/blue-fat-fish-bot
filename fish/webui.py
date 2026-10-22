@@ -67,6 +67,7 @@ def create_app(state: State) -> FastAPI:
             },
             "providers": PROVIDERS,
             "profiles": profiles.listing(),
+            "humanize": config.get("humanize", {}),
             "levels": [
                 {"level": level, "name": name, "style": style}
                 for level, (name, style) in enumerate(prompt.LEVELS)

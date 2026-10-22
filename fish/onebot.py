@@ -6,6 +6,7 @@ import asyncio
 import base64
 import contextlib
 import json
+import random
 import time
 from collections import OrderedDict, deque
 from typing import Any
@@ -14,7 +15,7 @@ import httpx
 import websockets
 from websockets.exceptions import ConnectionClosed
 
-from . import brain, outbox, reminders, settings, tools, video
+from . import brain, humanize, outbox, reminders, settings, tools, video
 from .guard import GUARD
 from .state import State
 
@@ -53,6 +54,10 @@ class OneBotServer:
         self._recent_ids: deque[str] = deque(maxlen=200)
         self._recent_text: dict[str, float] = {}
         self._socket: Any = None
+        self._active: dict[str, dict[str, Any]] = {}
+        self._proactive_last = 0.0
+        self._proactive_date = ""
+        self._proactive_count = 0
 
     # -- 连接 ------------------------------------------------------------
 
@@ -69,6 +74,7 @@ class OneBotServer:
         ):
             print(f"QQ 通道已就绪：ws://127.0.0.1:{port}（等 NapCat 连过来）")
             asyncio.create_task(self._reminder_loop())
+            asyncio.create_task(self._proactive_loop())
             await asyncio.Future()
 
     async def _handler(self, socket: Any) -> None:
@@ -256,6 +262,8 @@ class OneBotServer:
                 return
             if mode == "keyword" and not mentioned and not any(n in text for n in names):
                 return
+            if mode == "occasional" and not mentioned and not humanize.should_chime_in():
+                return
             key = f"group:{event.get('group_id')}"
             action = "send_group_msg"
             params: dict[str, Any] = {"group_id": event.get("group_id")}
@@ -267,6 +275,17 @@ class OneBotServer:
             scene, where = "qq_private", "私聊"
         else:
             return
+
+        self._remember(key, message_type, event)
+
+        # 拟人：睡觉时段不理人；有时候看到了也懒得回
+        if humanize.enabled():
+            if humanize.in_sleep_window():
+                print("[拟人] 作息时间里，不回")
+                return
+            if humanize.should_skip():
+                print("[拟人] 这次装作没看见")
+                return
 
         # 防刷屏：同一账号短时间发太多，直接拉黑并通知管理员
         verdict = GUARD.check(user_id)
@@ -306,6 +325,10 @@ class OneBotServer:
         shown = text or "[图片]"
         print(f"[{where}] {user_id}: {shown}")
 
+        # 拟人：先"看到"，过一会儿才回
+        if humanize.enabled():
+            await asyncio.sleep(humanize.read_delay())
+
         async with self._lock(key):
             history.append({"role": "user", "content": content})
             ctx = {
@@ -330,18 +353,119 @@ class OneBotServer:
                 limit = max(2, int(config["model"]["max_history"])) * 2
                 del history[:-limit]
 
-        print(f"  -> {answer}")
-        self.state.log(where, user_id, shown, answer)
+            print(f"  -> {answer}")
+            self.state.log(where, user_id, shown, answer)
 
-        # 工具登记的主动消息（给某人发 QQ、发邮件之外的动作）在这里真正发出去
-        for action, params in outbox.drain():
-            with contextlib.suppress(Exception):
-                await self._send(socket, action, params)
+            # 工具登记的主动消息（给某人发 QQ、发邮件之外的动作）在这里真正发出去
+            for queued_action, queued_params in outbox.drain():
+                with contextlib.suppress(Exception):
+                    await self._send(socket, queued_action, queued_params)
 
-        chunk_size = max(50, int(config["bot"]["reply_chunk"]))
-        for chunk in self._split(answer, chunk_size):
-            await self._send(socket, action, {**params, "message": chunk})
-            await asyncio.sleep(0.3)
+            chunk_size = max(50, int(config["bot"]["reply_chunk"]))
+            parts = humanize.split_reply(answer) if humanize.enabled() else [answer]
+            messages: list[str] = []
+            for part in parts:
+                messages.extend(self._split(part, chunk_size))
+
+            for index, piece in enumerate(messages):
+                if not piece:
+                    continue
+                if humanize.enabled():
+                    await asyncio.sleep(humanize.typing_time(piece))
+                await self._send(socket, action, {**params, "message": piece})
+                if humanize.enabled() and index < len(messages) - 1:
+                    await asyncio.sleep(humanize.gap())
+
+    def _remember(self, key: str, message_type: str, event: dict[str, Any]) -> None:
+        """记下最近活跃的会话，供"主动开口"挑目标。"""
+        target = event.get("group_id") if message_type == "group" else event.get("user_id")
+        if target is None:
+            return
+        self._active[key] = {
+            "kind": "group" if message_type == "group" else "private",
+            "id": target,
+            "scene": "qq_group" if message_type == "group" else "qq_private",
+            "last": time.time(),
+        }
+        if len(self._active) > 100:
+            oldest = min(self._active, key=lambda k: self._active[k]["last"])
+            self._active.pop(oldest, None)
+
+    async def _proactive_loop(self) -> None:
+        while True:
+            await asyncio.sleep(60)
+            try:
+                await self._maybe_proactive()
+            except Exception as exc:
+                print(f"[主动] 出错：{type(exc).__name__}: {exc}")
+
+    async def _maybe_proactive(self) -> None:
+        config = settings.load().get("humanize", {})
+        if not config.get("proactive", False) or not config.get("enabled", True):
+            return
+        if self._socket is None:
+            return
+
+        today = time.strftime("%Y-%m-%d")
+        if self._proactive_date != today:
+            self._proactive_date = today
+            self._proactive_count = 0
+        if self._proactive_count >= int(config.get("proactive_daily_max", 3)):
+            return
+
+        interval = max(5, int(config.get("proactive_interval_minutes", 60))) * 60
+        if time.time() - self._proactive_last < interval:
+            return
+        self._proactive_last = time.time()
+
+        if not humanize.proactive_due():
+            return
+
+        now = time.time()
+        pool = [item for item in self._active.values() if now - item["last"] < 6 * 3600]
+        if not pool:
+            return
+        target = random.choice(pool)
+
+        clock = time.strftime("%H:%M")
+        hint = (
+            f"（现在是 {clock}，{('群里' if target['kind'] == 'group' else '私聊里')}暂时没人说话。"
+            "你闲着，想主动开一句口，像真人那样随口问一句：吃了没、在干嘛、还不睡啊之类。"
+            "只回一句，别解释，别用括号写动作。）"
+        )
+
+        try:
+            line = await asyncio.to_thread(
+                brain.chat,
+                [{"role": "user", "content": hint}],
+                str(target["scene"]),
+                None,
+                {"user": "", "kind": target["kind"], "group": target.get("id")},
+            )
+        except Exception as exc:
+            print(f"[主动] 生成失败：{type(exc).__name__}")
+            return
+
+        line = (line or "").strip()
+        if not line:
+            return
+
+        await asyncio.sleep(humanize.read_delay() + humanize.typing_time(line))
+        if target["kind"] == "group":
+            await self._send(
+                self._socket,
+                "send_group_msg",
+                {"group_id": target["id"], "message": line},
+            )
+        else:
+            await self._send(
+                self._socket,
+                "send_private_msg",
+                {"user_id": target["id"], "message": line},
+            )
+        self._proactive_count += 1
+        self.state.log("主动", str(target["id"]), "（她主动开口）", line)
+        print(f"[主动] {line}")
 
     # -- 定时提醒 --------------------------------------------------------
 
