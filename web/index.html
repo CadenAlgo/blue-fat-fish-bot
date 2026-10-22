@@ -256,11 +256,16 @@
           <label style="display:flex;align-items:center;gap:8px;margin-top:0">
             <input type="checkbox" id="hz-enabled"> 开启拟人模式
           </label>
-          <label>看到消息后等多久才回（秒）</label>
+          <label>看到消息后等多久才回（区间内随机取一个）</label>
           <div class="row">
             <input type="text" id="hz-read-min" placeholder="3">
             <input type="text" id="hz-read-max" placeholder="12">
+            <select id="hz-read-unit" class="fixed" style="flex:0 0 92px">
+              <option value="1">秒</option>
+              <option value="60">分钟</option>
+            </select>
           </div>
+          <div class="hint">比如填 1 和 2、单位选分钟，就是每条消息随机等 60~120 秒再回。</div>
           <label>打字速度（秒/字）</label>
           <input type="text" id="hz-per-char" placeholder="0.12">
           <label>单段打字时间上下限（秒）</label>
@@ -621,7 +626,17 @@ async function refresh() {
 
     const hz = s.humanize || {};
     $('#hz-enabled').checked = hz.enabled !== false;
-    $('#hz-read-min').value = hz.read_delay_min ?? 3;
+    const readMin = Number(hz.read_delay_min ?? 3);
+    const readMax = Number(hz.read_delay_max ?? 12);
+    if (readMax >= 60) {
+      $('#hz-read-unit').value = '60';
+      $('#hz-read-min').value = +(readMin / 60).toFixed(2);
+      $('#hz-read-max').value = +(readMax / 60).toFixed(2);
+    } else {
+      $('#hz-read-unit').value = '1';
+      $('#hz-read-min').value = readMin;
+      $('#hz-read-max').value = readMax;
+    }
     $('#hz-read-max').value = hz.read_delay_max ?? 12;
     $('#hz-per-char').value = hz.typing_per_char ?? 0.12;
     $('#hz-type-min').value = hz.typing_min ?? 2;
@@ -866,12 +881,15 @@ async function deleteSticker(name) {
 }
 
 async function saveHumanize() {
+  const unit = Number($('#hz-read-unit').value) || 1;
+  const readMin = (Number($('#hz-read-min').value) || 0) * unit;
+  const readMax = (Number($('#hz-read-max').value) || 0) * unit;
   try {
     await post('/api/config', {
       humanize: {
         enabled: $('#hz-enabled').checked,
-        read_delay_min: Number($('#hz-read-min').value) || 0,
-        read_delay_max: Number($('#hz-read-max').value) || 0,
+        read_delay_min: Math.min(readMin, readMax),
+        read_delay_max: Math.max(readMin, readMax),
         typing_per_char: Number($('#hz-per-char').value) || 0,
         typing_min: Number($('#hz-type-min').value) || 0,
         typing_max: Number($('#hz-type-max').value) || 0,

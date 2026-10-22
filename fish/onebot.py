@@ -55,6 +55,7 @@ class OneBotServer:
         self._recent_text: dict[str, float] = {}
         self._socket: Any = None
         self._active: dict[str, dict[str, Any]] = {}
+        self._seq: dict[str, int] = {}
         self._proactive_last = 0.0
         self._proactive_date = ""
         self._proactive_count = 0
@@ -325,12 +326,23 @@ class OneBotServer:
         shown = text or "[图片]"
         print(f"[{where}] {user_id}: {shown}")
 
-        # 拟人：先"看到"，过一会儿才回
+        # 记一个序号：等太久的话，新消息来了就并到下一条一起回，避免连珠炮
+        seq = self._bump_seq(key)
+        history.append({"role": "user", "content": content})
+
+        # 拟人：先"看到"，在区间里随机等一会儿
         if humanize.enabled():
-            await asyncio.sleep(humanize.read_delay())
+            delay = humanize.read_delay()
+            print(f"  · 等 {delay:.0f} 秒再回")
+            await asyncio.sleep(delay)
+
+        if self._seq.get(key) != seq:
+            print("[拟人] 等待期间来了新消息，这条并到下一条一起回")
+            return
 
         async with self._lock(key):
-            history.append({"role": "user", "content": content})
+            if self._seq.get(key) != seq:
+                return
             ctx = {
                 "user": user_id,
                 "kind": "group" if message_type == "group" else "private",
@@ -345,9 +357,8 @@ class OneBotServer:
                     ctx,
                 )
             except Exception as exc:
-                history.pop()
                 print(f"  ! 出错：{type(exc).__name__}: {exc}")
-                answer = "喵……本鱼这边卡了一下，等下再问？"
+                return
             else:
                 history.append({"role": "assistant", "content": answer})
                 limit = max(2, int(config["model"]["max_history"])) * 2
@@ -375,6 +386,12 @@ class OneBotServer:
                 await self._send(socket, action, {**params, "message": piece})
                 if humanize.enabled() and index < len(messages) - 1:
                     await asyncio.sleep(humanize.gap())
+
+    def _bump_seq(self, key: str) -> int:
+        """给这个会话的消息编号，用来判断等待期间有没有新消息插进来。"""
+        value = self._seq.get(key, 0) + 1
+        self._seq[key] = value
+        return value
 
     def _remember(self, key: str, message_type: str, event: dict[str, Any]) -> None:
         """记下最近活跃的会话，供"主动开口"挑目标。"""
